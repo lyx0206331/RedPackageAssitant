@@ -9,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.yanzhenjie.permission.Action;
@@ -20,10 +21,13 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
+    private Button mBootBtn;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mBootBtn = findViewById(R.id.boot_btn);
 
         requestPermission(Permission.READ_PHONE_STATE);
     }

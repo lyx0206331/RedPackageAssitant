@@ -4,6 +4,8 @@
     <string name="accessibility_service_description">红包助手描述文件</string>
     <string name="accessibility_service_label">红包助手标签</string>
 
+    <string name="tips">请先进入“设置”页的“智能辅助”功能，点开“无障碍”页面,选择“红包助手标签”，打开页面中的“红包助手标签”功能。</string>
+
     <string name="setting">Setting</string>
     <string name="resume">Resume</string>
     <string name="cancel">Cancel</string>
