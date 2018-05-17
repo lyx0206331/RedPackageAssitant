@@ -1,4 +1,4 @@
-package com.adrian.redpackageassitant;
+package com.adrian.redpackageassitant.tools;
 
 import android.content.Context;
 import android.telephony.TelephonyManager;

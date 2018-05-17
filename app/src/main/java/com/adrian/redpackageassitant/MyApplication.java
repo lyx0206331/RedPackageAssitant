@@ -2,6 +2,8 @@ package com.adrian.redpackageassitant;
 
 import android.app.Application;
 
+import com.adrian.redpackageassitant.tools.LogUtil;
+
 public class MyApplication extends Application {
 
     private static MyApplication instance;
@@ -12,6 +14,8 @@ public class MyApplication extends Application {
     public void onCreate() {
         super.onCreate();
         instance = this;
+
+        LogUtil.setDebug(true);
     }
 
     public static MyApplication getInstance() {
