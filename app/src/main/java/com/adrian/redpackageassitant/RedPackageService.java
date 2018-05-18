@@ -3,6 +3,7 @@ package com.adrian.redpackageassitant;
 import android.accessibilityservice.AccessibilityService;
 import android.app.Notification;
 import android.app.PendingIntent;
+import android.text.TextUtils;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
@@ -65,7 +66,7 @@ public class RedPackageService extends AccessibilityService {
             getWxQrSum();
 
             //---------------------支付宝二维码收款-----------------------
-            getAliBillDetail();
+            getAliBillInfo();
         }
 
         if (accessibilityEvent.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
@@ -96,42 +97,186 @@ public class RedPackageService extends AccessibilityService {
         }
     }
 
+    private void getAliBillInfo() {
+        if (rootNodeInfo == null) {
+            return;
+        }
+        List<AccessibilityNodeInfo> titleList = rootNodeInfo.findAccessibilityNodeInfosByViewId(ID_ALI_TITLE);
+        for (AccessibilityNodeInfo node :
+                titleList) {
+            CharSequence nodeTxt = node.getText();
+            if (TextUtils.isEmpty(nodeTxt)) {
+                continue;
+            }
+            if (nodeTxt.toString().equals(TXT_ALI_BILL_DETAIL)) {
+//                getAliTransferDetail();
+                getAliPayDetail();
+                return;
+            } else if (nodeTxt.toString().equals(TXT_TODAY_INCOME)) {
+                getAliPayDetail();
+                return;
+            }
+        }
+    }
+
     /**
-     * 获取账信息
+     * 获取支付宝扫码支付信息
      */
-    private void getAliBillDetail() {
+    private void getAliPayDetail() {
+        LogUtil.LogE(TAG, "支付宝扫码支付");
         if (rootNodeInfo == null) {
             return;
         }
         List<AccessibilityNodeInfo> dataList = rootNodeInfo.findAccessibilityNodeInfosByViewId(ID_ALI_DETAIL_ROOT);
-        for (AccessibilityNodeInfo nodeInfo : dataList) {
-            LogUtil.LogE(TAG, "data:" + nodeInfo.getContentDescription());
-            recursiveNode(nodeInfo);
+        for (AccessibilityNodeInfo nodeInfo :
+                dataList) {
+            openPayDetail(nodeInfo);
         }
-//        int size = dataList.get(0).getChild(0).getChild(0).getChild(0).getChildCount();
-//        LogUtil.LogE(TAG, "data size:" + size);
-//        if (dataList != null && dataList.size() > 0) {
-//            LogUtil.LogE(TAG, "data size:" + dataList.size());
-//            if (dataList.get(0).getChildCount() > 0) {
-//
-//            }
-//        }
     }
 
     /**
-     * 递归获取数据
+     * 打开支付宝扫码支付详情页
      *
      * @param nodeInfo
      */
-    private void recursiveNode(AccessibilityNodeInfo nodeInfo) {
+    private void openPayDetail(AccessibilityNodeInfo nodeInfo) {
+        if (nodeInfo == null || nodeInfo.getChildCount() == 0) {
+            return;
+        }
+        int size = nodeInfo.getChildCount();
+        if (size > 0) {
+            AccessibilityNodeInfo node = nodeInfo.getChild(0);
+            if (size > 0) {
+                int size1 = node.getChildCount();
+                LogUtil.LogE(TAG, "size1:" + size1);
+                if (size1 > 0) {
+                    AccessibilityNodeInfo node1 = node.getChild(0);
+                    int size2 = node1.getChildCount();
+                    LogUtil.LogE(TAG, "size2:" + size2);
+                    if (size2 > 0) {
+                        AccessibilityNodeInfo node2 = node1.getChild(0);
+                        int size3 = node2.getChildCount();
+                        LogUtil.LogE(TAG, "size3:" + size3);
+                        if (size3 >= 2) {
+                            node2.getChild(1).performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                            LogUtil.LogE(TAG, "click first item");
+                        } else if (size3 > 0) {
+                            AccessibilityNodeInfo node3 = node2.getChild(0);
+                            int size4 = node3.getChildCount();
+//                            LogUtil.LogE(TAG, "size4:" + size4);
+                            parseAliDetail(node3);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 解析支付宝详情页
+     *
+     * @param nodeInfo
+     */
+    private void parseAliDetail(AccessibilityNodeInfo nodeInfo) {
         if (nodeInfo == null || nodeInfo.getChildCount() == 0) {
             return;
         }
         int size = nodeInfo.getChildCount();
         for (int i = 0; i < size; i++) {
             AccessibilityNodeInfo info = nodeInfo.getChild(i);
-            LogUtil.LogE(TAG, "desc:" + info.getContentDescription());
-            recursiveNode(info);
+            CharSequence sequence = info.getContentDescription();
+            LogUtil.LogE(TAG, "desc:" + sequence);
+            if (!TextUtils.isEmpty(sequence) && i + 1 < size) {
+                String desc = sequence.toString();
+                String content = nodeInfo.getChild(i + 1).getContentDescription().toString();
+                if (desc.contains(TXT_PLUS)) {
+                    LogUtil.LogE(TAG, "付款人:" + nodeInfo.getChild(i - 1).getContentDescription() + " 付款金额:" + desc);
+                }
+                if (desc.equals(TXT_RECEIPT_WAY)) {
+                    LogUtil.LogE(TAG, "收款方式:" + content);
+                }
+                if (desc.equals(TXT_RECEIPT_REASON)) {
+                    LogUtil.LogE(TAG, "收款理由:" + content);
+                }
+                if (desc.equals(TXT_TRANSFER_REMARK)) {
+                    LogUtil.LogE(TAG, "转账备注:" + content);
+                }
+                if (desc.equals(TXT_PAYER_ACCOUNT)) {
+                    LogUtil.LogE(TAG, "对方账户:" + content);
+                }
+                if (desc.equals(TXT_BILL_TYPE)) {
+                    LogUtil.LogE(TAG, "账单分类:" + content);
+                }
+                if (desc.equals(TXT_CREATE_TIME)) {
+                    LogUtil.LogE(TAG, "创建时间:" + content);
+                }
+                if (desc.equals(TXT_ORDER_NUM)) {
+                    LogUtil.LogE(TAG, "订单号:" + content);
+                }
+            }
+        }
+    }
+
+    /**
+     * 获取支付宝扫码转账信息
+     */
+    @Deprecated
+    private void getAliTransferDetail() {
+        LogUtil.LogE(TAG, "支付宝扫码转账");
+        if (rootNodeInfo == null) {
+            return;
+        }
+        List<AccessibilityNodeInfo> dataList = rootNodeInfo.findAccessibilityNodeInfosByViewId(ID_ALI_DETAIL_ROOT);
+        for (AccessibilityNodeInfo nodeInfo : dataList) {
+            LogUtil.LogE(TAG, "list:" + nodeInfo.getContentDescription());
+            readTransferDetail(nodeInfo);
+        }
+    }
+
+    /**
+     * 获取支付宝扫码转账详情内容
+     *
+     * @param nodeInfo
+     */
+    @Deprecated
+    private void readTransferDetail(AccessibilityNodeInfo nodeInfo) {
+        if (nodeInfo == null || nodeInfo.getChildCount() == 0) {
+            return;
+        }
+        int size = nodeInfo.getChildCount();
+        for (int i = 0; i < size; i++) {
+            AccessibilityNodeInfo info = nodeInfo.getChild(i);
+            CharSequence sequence = info.getContentDescription();
+            LogUtil.LogE(TAG, "desc:" + sequence);
+            if (!TextUtils.isEmpty(sequence) && i + 1 < size) {
+                String desc = sequence.toString();
+                String content = nodeInfo.getChild(i + 1).getContentDescription().toString();
+                if (desc.contains(TXT_PLUS)) {
+                    LogUtil.LogE(TAG, "付款人:" + nodeInfo.getChild(i - 1).getContentDescription() + " 付款金额:" + desc);
+                }
+                if (desc.equals(TXT_RECEIPT_WAY)) {
+                    LogUtil.LogE(TAG, "收款方式:" + content);
+                }
+                if (desc.equals(TXT_RECEIPT_REASON)) {
+                    LogUtil.LogE(TAG, "收款理由:" + content);
+                }
+                if (desc.equals(TXT_TRANSFER_REMARK)) {
+                    LogUtil.LogE(TAG, "转账备注:" + content);
+                }
+                if (desc.equals(TXT_PAYER_ACCOUNT)) {
+                    LogUtil.LogE(TAG, "对方账户:" + content);
+                }
+                if (desc.equals(TXT_BILL_TYPE)) {
+                    LogUtil.LogE(TAG, "账单分类:" + content);
+                }
+                if (desc.equals(TXT_CREATE_TIME)) {
+                    LogUtil.LogE(TAG, "创建时间:" + content);
+                }
+                if (desc.equals(TXT_ORDER_NUM)) {
+                    LogUtil.LogE(TAG, "订单号:" + content);
+                }
+            }
+            readTransferDetail(info);
         }
     }
 
