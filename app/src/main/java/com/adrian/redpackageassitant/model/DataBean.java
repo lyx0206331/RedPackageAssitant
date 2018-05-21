@@ -1,5 +1,10 @@
 package com.adrian.redpackageassitant.model;
 
+import android.text.TextUtils;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class DataBean {
     private String channel;   //渠道。WX:微信;ALI:支付宝;BANK:银行
     private String mode; //支付模式.QR:扫码;ZZ:转账;HB:红包
@@ -117,5 +122,46 @@ public class DataBean {
 
     public void setDeviceTime(String deviceTime) {
         this.deviceTime = deviceTime;
+    }
+
+    public String parse2Json() {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("channel", channel)
+                    .put("mode", mode)
+                    .put("money", money)
+                    .put("number", number)
+                    .put("payer", payer)
+                    .put("payerNotes", TextUtils.isEmpty(payerNotes) ? "" : payerNotes)
+                    .put("paymentDateTime", paymentDatetime)
+                    .put("receiptDateTime", receiptDatetime)
+                    .put("wxStats", wxStats)
+                    .put("wxDelay", wxDelay)
+                    .put("deviceName", deviceName)
+                    .put("deviceIMEI", deviceIMEI)
+                    .put("deviceTime", deviceTime);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return jsonObject.toString();
+    }
+
+    @Override
+    public String toString() {
+        return "DataBean{" +
+                "channel='" + channel + '\'' +
+                ", mode='" + mode + '\'' +
+                ", money=" + money +
+                ", number='" + number + '\'' +
+                ", payer='" + payer + '\'' +
+                ", payerNotes='" + payerNotes + '\'' +
+                ", paymentDatetime='" + paymentDatetime + '\'' +
+                ", receiptDatetime='" + receiptDatetime + '\'' +
+                ", wxStats='" + wxStats + '\'' +
+                ", wxDelay='" + wxDelay + '\'' +
+                ", deviceName='" + deviceName + '\'' +
+                ", deviceIMEI='" + deviceIMEI + '\'' +
+                ", deviceTime='" + deviceTime + '\'' +
+                '}';
     }
 }

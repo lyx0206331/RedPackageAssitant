@@ -20,8 +20,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
-        <service android:name=".RedPackageService"
+
+        <service
+            android:name=".service.RedPackageService"
             android:description="@string/accessibility_service_description"
             android:enabled="true"
             android:exported="true"
@@ -33,6 +34,8 @@
             <meta-data android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config"/>
         </service>
+
+        <service android:name=".service.UploadService" />
     </application>
 
 </manifest>

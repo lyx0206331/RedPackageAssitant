@@ -1,12 +1,19 @@
-package com.adrian.redpackageassitant;
+package com.adrian.redpackageassitant.service;
 
 import android.accessibilityservice.AccessibilityService;
 import android.app.Notification;
 import android.app.PendingIntent;
+import android.content.Intent;
+import android.os.Handler;
+import android.os.Message;
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
+import com.adrian.redpackageassitant.MyApplication;
+import com.adrian.redpackageassitant.model.DataBean;
+import com.adrian.redpackageassitant.tools.CommUtil;
 import com.adrian.redpackageassitant.tools.LogUtil;
 
 import java.util.List;
@@ -19,6 +26,25 @@ public class RedPackageService extends AccessibilityService {
     private static final String TAG = "REDPCKAGE_SERVICE";
 
     private AccessibilityNodeInfo rootNodeInfo;
+
+    private DataBean dataBean;
+
+    private Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what) {
+                case 0:
+//                    getAliTransferDetail();
+                    AccessibilityNodeInfo node = (AccessibilityNodeInfo) msg.obj;
+                    node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                    LogUtil.LogE(TAG, "click time");
+                    break;
+                default:
+                    break;
+            }
+        }
+    };
 
     @Override
     protected void onServiceConnected() {
@@ -83,6 +109,13 @@ public class RedPackageService extends AccessibilityService {
             answerWxBackKey();
 
         }
+
+        if (accessibilityEvent.getEventType() == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) {
+            LogUtil.LogE(TAG, "TYPE_VIEW_TEXT_CHANGED");
+        }
+        if (accessibilityEvent.getEventType() == AccessibilityEvent.TYPE_WINDOWS_CHANGED) {
+            LogUtil.LogE(TAG, "TYPE_WINDOWS_CHANGED");
+        }
     }
 
     /**
@@ -109,7 +142,7 @@ public class RedPackageService extends AccessibilityService {
                 continue;
             }
             if (nodeTxt.toString().equals(TXT_ALI_BILL_DETAIL)) {
-//                getAliTransferDetail();
+                getAliTransferDetail();
                 getAliPayDetail();
                 return;
             } else if (nodeTxt.toString().equals(TXT_TODAY_INCOME)) {
@@ -157,13 +190,41 @@ public class RedPackageService extends AccessibilityService {
                         AccessibilityNodeInfo node2 = node1.getChild(0);
                         int size3 = node2.getChildCount();
                         LogUtil.LogE(TAG, "size3:" + size3);
-                        if (size3 >= 2) {
-                            node2.getChild(1).performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                            LogUtil.LogE(TAG, "click first item");
+                        if (size3 >= 26) {
+                            if (node2.getChild(size3 - 2).getChildCount() > 0) {
+                                if (dataBean == null) {
+                                    dataBean = new DataBean();
+                                }
+                                dataBean.setChannel("ALI");
+                                dataBean.setDeviceIMEI(MyApplication.getInstance().getImei());
+                                dataBean.setDeviceName(CommUtil.getDeviceName());
+                                dataBean.setDeviceTime(System.currentTimeMillis() + "");
+                                dataBean.setMode("QR");
+                                dataBean.setPayer(node2.getChild(0).getContentDescription().toString());
+                                dataBean.setMoney((int) (Double.parseDouble(node2.getChild(size3 - 20).getContentDescription().toString()) * 100));
+                                dataBean.setPayerNotes(node2.getChild(size3 - 9).getContentDescription().toString());
+                                dataBean.setPaymentDatetime(node2.getChild(size3 - 3).getContentDescription().toString());
+                                AccessibilityNodeInfo numNode = node2.getChild(size3 - 2);
+                                if (TextUtils.isEmpty(dataBean.getNumber()) || !dataBean.getNumber().equals(numNode.getContentDescription().toString())) {
+                                    dataBean.setNumber(numNode.getChild(numNode.getChildCount() - 1).getContentDescription().toString());
+                                    uploadData(dataBean);
+                                }
+                            } else {
+                                AccessibilityNodeInfo tmp = node2.getChild(size3 - 2);
+//                                LogUtil.LogE(TAG, "clickable:" + tmp.isClickable());
+                                Message msg = mHandler.obtainMessage(0);
+                                msg.obj = tmp;
+                                mHandler.sendMessageDelayed(msg, 500);
+//                                node2.getChild(size3-2).performAction(AccessibilityNodeInfo.ACTION_CLICK);
+//                                LogUtil.LogE(TAG, "click time");
+                            }
+                        } else if (size3 > 5) {
+                            node2.getChild(3).performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                            LogUtil.LogE(TAG, "click first item " + node2.getChild(3).getContentDescription() + " " + node2.getChild(4).getChild(0).getContentDescription());
                         } else if (size3 > 0) {
                             AccessibilityNodeInfo node3 = node2.getChild(0);
                             int size4 = node3.getChildCount();
-//                            LogUtil.LogE(TAG, "size4:" + size4);
+                            LogUtil.LogE(TAG, "size4:" + size4);
                             parseAliDetail(node3);
                         }
                     }
@@ -185,7 +246,7 @@ public class RedPackageService extends AccessibilityService {
         for (int i = 0; i < size; i++) {
             AccessibilityNodeInfo info = nodeInfo.getChild(i);
             CharSequence sequence = info.getContentDescription();
-            LogUtil.LogE(TAG, "desc:" + sequence);
+            LogUtil.LogE(TAG, "desc1:" + sequence);
             if (!TextUtils.isEmpty(sequence) && i + 1 < size) {
                 String desc = sequence.toString();
                 String content = nodeInfo.getChild(i + 1).getContentDescription().toString();
@@ -247,12 +308,26 @@ public class RedPackageService extends AccessibilityService {
         for (int i = 0; i < size; i++) {
             AccessibilityNodeInfo info = nodeInfo.getChild(i);
             CharSequence sequence = info.getContentDescription();
-            LogUtil.LogE(TAG, "desc:" + sequence);
+            LogUtil.LogE(TAG, "desc2:" + sequence);
+//            if (!TextUtils.isEmpty(sequence) && sequence.equals("账单详情")) {
+//                info.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+//                return;
+//            }
             if (!TextUtils.isEmpty(sequence) && i + 1 < size) {
                 String desc = sequence.toString();
                 String content = nodeInfo.getChild(i + 1).getContentDescription().toString();
+                if (dataBean == null) {
+                    dataBean = new DataBean();
+                }
+                dataBean.setChannel("ALI");
+                dataBean.setDeviceIMEI(MyApplication.getInstance().getImei());
+                dataBean.setDeviceName(CommUtil.getDeviceName());
+                dataBean.setDeviceTime(System.currentTimeMillis() + "");
+                dataBean.setMode("ZZ");
                 if (desc.contains(TXT_PLUS)) {
                     LogUtil.LogE(TAG, "付款人:" + nodeInfo.getChild(i - 1).getContentDescription() + " 付款金额:" + desc);
+                    dataBean.setPayer(nodeInfo.getChild(i - 1).getContentDescription().toString());
+                    dataBean.setMoney((int) (Double.parseDouble(desc.toString().substring(1)) * 100));
                 }
                 if (desc.equals(TXT_RECEIPT_WAY)) {
                     LogUtil.LogE(TAG, "收款方式:" + content);
@@ -262,6 +337,7 @@ public class RedPackageService extends AccessibilityService {
                 }
                 if (desc.equals(TXT_TRANSFER_REMARK)) {
                     LogUtil.LogE(TAG, "转账备注:" + content);
+                    dataBean.setPayerNotes(content);
                 }
                 if (desc.equals(TXT_PAYER_ACCOUNT)) {
                     LogUtil.LogE(TAG, "对方账户:" + content);
@@ -271,13 +347,25 @@ public class RedPackageService extends AccessibilityService {
                 }
                 if (desc.equals(TXT_CREATE_TIME)) {
                     LogUtil.LogE(TAG, "创建时间:" + content);
+                    dataBean.setPaymentDatetime(content);
                 }
                 if (desc.equals(TXT_ORDER_NUM)) {
                     LogUtil.LogE(TAG, "订单号:" + content);
+                    if (TextUtils.isEmpty(dataBean.getNumber()) || !dataBean.getNumber().equals(content)) {
+                        dataBean.setNumber(content);
+//                        LogUtil.LogE(TAG, "data0:" + dataBean.toString());
+                        uploadData(dataBean);
+                    }
                 }
             }
             readTransferDetail(info);
         }
+    }
+
+    private void uploadData(DataBean dataBean) {
+        Intent intent = new Intent(this, UploadService.class);
+        intent.putExtra("json", dataBean.parse2Json());
+        startService(intent);
     }
 
     /**

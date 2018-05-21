@@ -1,7 +1,9 @@
 package com.adrian.redpackageassitant.tools;
 
 import android.content.Context;
+import android.os.Build;
 import android.telephony.TelephonyManager;
+import android.util.Base64;
 
 public class CommUtil {
 
@@ -11,7 +13,7 @@ public class CommUtil {
      * @param context
      * @return
      */
-    public static final String getIMEI(Context context) {
+    public static String getIMEI(Context context) {
         try {
             //实例化TelephonyManager对象
             TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
@@ -27,5 +29,14 @@ public class CommUtil {
             return "";
         }
 
+    }
+
+    public static String getDeviceName() {
+        return Build.MODEL;
+    }
+
+    public static String base64Encode(String content) {
+        String encode = Base64.encodeToString(content.getBytes(), Base64.DEFAULT);
+        return encode;
     }
 }

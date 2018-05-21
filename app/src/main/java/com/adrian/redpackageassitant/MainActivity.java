@@ -15,6 +15,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.adrian.redpackageassitant.service.RedPackageService;
 import com.adrian.redpackageassitant.tools.CommUtil;
 import com.adrian.redpackageassitant.tools.LogUtil;
 import com.yanzhenjie.permission.Action;
